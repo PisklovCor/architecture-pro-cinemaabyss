@@ -1,0 +1,87 @@
+@startuml C4_Container
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(user, "Пользователь", "Веб/Мобайл клиент")
+
+Boundary(edge, "Edge / Public Entry") {
+    Container(gw, "API Gateway / Proxy", "HTTP", "Routing, AuthZ, Rate Limiting, Feature Flag: Movies % Switch")
+    System_Ext(idp, "IdP / Auth Server", "JWT/OAuth2/OIDC")
+}
+
+Boundary(movies_domain, "Domain: Catalog / Movies") {
+    Container(movies_svc, "Movies Service", "Go, REST API", "")
+    ContainerDb(movies_db, "Movies DB", "PostgreSQL", "")
+}
+
+Boundary(subs_domain, "Domain: Subscriptions / Entitlements") {
+    Container(subs_svc, "Subscriptions Service", "REST API", "")
+    ContainerDb(subs_db, "Subscriptions DB", "PostgreSQL", "")
+}
+
+Boundary(billing_domain, "Domain: Billing / Payments") {
+    Container(pay_svc, "Payments Service", "REST API", "")
+    ContainerDb(pay_db, "Payments DB", "PostgreSQL", "")
+    System_Ext(ext_psp, "Payment Provider", "")
+}
+
+Boundary(identity_domain, "Domain: Users / Identity") {
+    Container(users_svc, "Users Service", "REST API", "")
+    ContainerDb(users_db, "Users DB", "PostgreSQL", "")
+}
+
+Boundary(events_domain, "Domain: Events / Streaming / Audit") {
+    Container(events_svc, "Events Service", "REST API", "Producers/Consumers")
+    ContainerDb(kafka, "Kafka Cluster", "Message Broker", "")
+}
+
+Boundary(legacy, "Legacy: Monolith") {
+    Container(monolith, "Monolith", "Users, Movies, Payments, Subscriptions", "")
+    ContainerDb(monolith_db, "Monolith DB", "PostgreSQL", "")
+}
+
+Boundary(xcut, "Cross‑cutting: Observability & Security") {
+    Container(tracing, "Tracing/Logs/Metrics", "", "")
+    Container(vault, "Secrets Manager", "", "")
+}
+
+Rel(user, gw, "Uses", "HTTPS")
+Rel(gw, idp, "Authenticates", "OIDC")
+
+Rel(gw, movies_svc, "Routes to", "/api/movies")
+Rel(gw, monolith, "Legacy route", "/api/movies")
+
+Rel(gw, users_svc, "Routes to", "/api/users")
+Rel(gw, pay_svc, "Routes to", "/api/payments")
+Rel(gw, subs_svc, "Routes to", "/api/subscriptions")
+
+Rel(movies_svc, movies_db, "Uses")
+Rel(users_svc, users_db, "Uses")
+Rel(pay_svc, pay_db, "Uses")
+Rel(subs_svc, subs_db, "Uses")
+Rel(monolith, monolith_db, "Uses")
+
+Rel(movies_svc, kafka, "Publishes", "movie-events")
+Rel(users_svc, kafka, "Publishes", "user-events")
+Rel(pay_svc, kafka, "Publishes", "payment-events")
+Rel(events_svc, kafka, "Subscribes/Publishes")
+Rel(monolith, kafka, "Optional legacy events")
+
+Rel(pay_svc, ext_psp, "Integrates")
+
+Rel(gw, tracing, "Logs to")
+Rel(movies_svc, tracing, "Logs to")
+Rel(users_svc, tracing, "Logs to")
+Rel(pay_svc, tracing, "Logs to")
+Rel(subs_svc, tracing, "Logs to")
+Rel(events_svc, tracing, "Logs to")
+Rel(monolith, tracing, "Logs to")
+
+Rel(gw, vault, "Uses")
+Rel(movies_svc, vault, "Uses")
+Rel(users_svc, vault, "Uses")
+Rel(pay_svc, vault, "Uses")
+Rel(subs_svc, vault, "Uses")
+Rel(events_svc, vault, "Uses")
+
+SHOW_LEGEND()
+@enduml
