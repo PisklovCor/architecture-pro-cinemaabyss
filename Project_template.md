@@ -1,7 +1,7 @@
 ## Изучите [README.md](README.md) файл и структуру проекта.
 
 ## Задание 1
-[Контейнерная диаграмма To‑Be (C4)](diagrams/c4-container.md)
+[Контейнерная диаграмма To‑Be (C4)](diagrams/C4_Container.png)
 
 ## Задание 2
 
