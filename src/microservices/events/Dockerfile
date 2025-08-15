@@ -27,7 +27,7 @@ RUN apk add --no-cache curl
 WORKDIR /src/microservices
 
 # Копируем jar файл из предыдущего этапа
-COPY --from=builder /src/microservices/target/proxy-*.jar app.jar
+COPY --from=builder /src/microservices/target/events-*.jar app.jar
 
 # Меняем владельца файлов
 RUN chown spring:spring app.jar
@@ -35,12 +35,12 @@ RUN chown spring:spring app.jar
 # Переключаемся на пользователя spring
 USER spring:spring
 
-# Открываем порт 8000
-EXPOSE 8000
+# Открываем порт 8090
+EXPOSE 8090
 
 # Добавляем health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/actuator/health || exit 1
+    CMD curl -f http://localhost:8090/actuator/health || exit 1
 
 # Запускаем приложение
 ENTRYPOINT ["java", "-jar", "app.jar"]

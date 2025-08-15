@@ -1,0 +1,13 @@
+spring:
+  kafka:
+    bootstrap-servers: ${spring.embedded.kafka.brokers}
+    producer:
+      retries: 0
+    consumer:
+      group-id: test-group
+      auto-offset-reset: earliest
+
+logging:
+  level:
+    com.example: DEBUG
+    org.springframework.kafka: DEBUG
