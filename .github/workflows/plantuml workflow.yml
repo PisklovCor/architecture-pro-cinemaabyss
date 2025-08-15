@@ -62,8 +62,6 @@ jobs:
             echo "Context diagram not found: diagrams/c4-container.puml"
           fi
           
-          ' _ {} \;
-          
           # Показываем сгенерированные файлы
           echo "Generated files:"
           find diagrams/ -name "*.png" -o -name "*.svg" || echo "No output files generated"
@@ -93,7 +91,7 @@ jobs:
           fi
           
           git commit -m "🤖 Automated diagram generation [skip ci]"
-          git push origin warmhouse
+          git push origin cinema
 
       - name: Upload artifacts (для отладки)
         if: always()
