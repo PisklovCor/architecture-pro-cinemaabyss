@@ -1,105 +1,31 @@
 package org.example.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.List;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class MovieEvent {
-    private Integer movieId;
-    private String title;
-    private String action;
-    private Integer userId;
-    private Float rating;
-    private List<String> genres;
-    private String description;
-
-    public MovieEvent() {}
-
-    @JsonCreator
-    public MovieEvent(@JsonProperty("movie_id") Integer movieId,
-                      @JsonProperty("title") String title,
-                      @JsonProperty("action") String action,
-                      @JsonProperty("user_id") Integer userId,
-                      @JsonProperty("rating") Float rating,
-                      @JsonProperty("genres") List<String> genres,
-                      @JsonProperty("description") String description) {
-        this.movieId = movieId;
-        this.title = title;
-        this.action = action;
-        this.userId = userId;
-        this.rating = rating;
-        this.genres = genres;
-        this.description = description;
-    }
 
     @JsonProperty("movie_id")
-    public Integer getMovieId() {
-        return movieId;
-    }
+    private Integer movieId;
 
-    public void setMovieId(Integer movieId) {
-        this.movieId = movieId;
-    }
+    private String title;
 
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getAction() {
-        return action;
-    }
-
-    public void setAction(String action) {
-        this.action = action;
-    }
+    private String action;
 
     @JsonProperty("user_id")
-    public Integer getUserId() {
-        return userId;
-    }
+    private Integer userId;
 
-    public void setUserId(Integer userId) {
-        this.userId = userId;
-    }
+    private Float rating;
 
-    public Float getRating() {
-        return rating;
-    }
+    private List<String> genres;
 
-    public void setRating(Float rating) {
-        this.rating = rating;
-    }
+    private String description;
 
-    public List<String> getGenres() {
-        return genres;
-    }
-
-    public void setGenres(List<String> genres) {
-        this.genres = genres;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    @Override
-    public String toString() {
-        return "MovieEvent{" +
-                "movieId=" + movieId +
-                ", title='" + title + '\'' +
-                ", action='" + action + '\'' +
-                ", userId=" + userId +
-                ", rating=" + rating +
-                ", genres=" + genres +
-                ", description='" + description + '\'' +
-                '}';
-    }
 }

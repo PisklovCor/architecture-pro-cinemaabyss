@@ -1,30 +1,14 @@
 package org.example.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ErrorResponse {
+
     private String error;
 
-    public ErrorResponse() {}
-
-    @JsonCreator
-    public ErrorResponse(@JsonProperty("error") String error) {
-        this.error = error;
-    }
-
-    public String getError() {
-        return error;
-    }
-
-    public void setError(String error) {
-        this.error = error;
-    }
-
-    @Override
-    public String toString() {
-        return "ErrorResponse{" +
-                "error='" + error + '\'' +
-                '}';
-    }
 }
