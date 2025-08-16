@@ -35,12 +35,12 @@ RUN chown spring:spring app.jar
 # Переключаемся на пользователя spring
 USER spring:spring
 
-# Открываем порт 8090
-EXPOSE 8090
+# Открываем порт 8082
+EXPOSE 8082
 
 # Добавляем health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8090/actuator/health || exit 1
+    CMD curl -f http://localhost:8082/actuator/health || exit 1
 
 # Запускаем приложение
 ENTRYPOINT ["java", "-jar", "app.jar"]
