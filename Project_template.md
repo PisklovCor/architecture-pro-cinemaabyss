@@ -12,7 +12,9 @@
 
 ----
 
-Тесты: [Запуск коллекции в postman](docs/тесты.png)
+Тесты Postman: [Запуск коллекции в postman](docs/тесты.png)
+
+Тесты Newman: [Запуск коллекции в postman](docs/ньюмэн.png)
 
 Kafka: [Kafka UI](docs/кафка.png)
 
