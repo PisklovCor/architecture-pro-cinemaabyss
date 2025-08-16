@@ -1,9 +1,7 @@
 package org.example.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.example.model.Movie;
-import org.example.model.Payment;
-import org.example.model.User;
+import org.example.model.*;
 import org.example.service.EventProducer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,11 +10,11 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Arrays;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -37,60 +35,70 @@ class EventControllerTest {
     void healthCheck_ShouldReturnOk() throws Exception {
         mockMvc.perform(get("/api/events/health"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("Service is healthy"));
+                .andExpect(jsonPath("$.status").value(true));
     }
 
     @Test
-    void createUserEvent_ShouldReturnSuccessMessage() throws Exception {
+    void createUserEvent_ShouldReturnEventResponse() throws Exception {
         // Given
-        User user = new User("user-001", "John Doe", "john.doe@example.com");
-        doNothing().when(eventProducer).sendUserEvent(any(User.class));
+        UserEvent userEvent = new UserEvent(1, "john_doe", "john.doe@example.com", "registered", LocalDateTime.now());
+        EventResponse expectedResponse = new EventResponse("success", 0, 42L, 
+            new Event("user-1-abc123", "user", LocalDateTime.now(), userEvent));
+        
+        when(eventProducer.sendUserEvent(any(UserEvent.class))).thenReturn(expectedResponse);
 
         // When & Then
-        mockMvc.perform(post("/api/events/users")
+        mockMvc.perform(post("/api/events/user")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(user)))
-                .andExpect(status().isOk())
-                .andExpect(content().string("User event sent successfully"));
-
-        verify(eventProducer).sendUserEvent(any(User.class));
+                        .content(objectMapper.writeValueAsString(userEvent)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("success"))
+                .andExpect(jsonPath("$.partition").value(0))
+                .andExpect(jsonPath("$.offset").value(42));
     }
 
     @Test
-    void createPaymentEvent_ShouldReturnSuccessMessage() throws Exception {
+    void createPaymentEvent_ShouldReturnEventResponse() throws Exception {
         // Given
-        Payment payment = new Payment("payment-001", "user-001", new BigDecimal("99.99"), "USD");
-        doNothing().when(eventProducer).sendPaymentEvent(any(Payment.class));
+        PaymentEvent paymentEvent = new PaymentEvent(1, 1, 99.99f, "completed", LocalDateTime.now(), "credit_card");
+        EventResponse expectedResponse = new EventResponse("success", 0, 43L, 
+            new Event("payment-1-abc123", "payment", LocalDateTime.now(), paymentEvent));
+        
+        when(eventProducer.sendPaymentEvent(any(PaymentEvent.class))).thenReturn(expectedResponse);
 
         // When & Then
-        mockMvc.perform(post("/api/events/payments")
+        mockMvc.perform(post("/api/events/payment")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(payment)))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Payment event sent successfully"));
-
-        verify(eventProducer).sendPaymentEvent(any(Payment.class));
+                        .content(objectMapper.writeValueAsString(paymentEvent)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("success"))
+                .andExpect(jsonPath("$.partition").value(0))
+                .andExpect(jsonPath("$.offset").value(43));
     }
 
     @Test
-    void createMovieEvent_ShouldReturnSuccessMessage() throws Exception {
+    void createMovieEvent_ShouldReturnEventResponse() throws Exception {
         // Given
-        Movie movie = new Movie("movie-001", "The Matrix", "Sci-Fi", 1999);
-        doNothing().when(eventProducer).sendMovieEvent(any(Movie.class));
+        MovieEvent movieEvent = new MovieEvent(1, "Inception", "viewed", 1, 8.8f, 
+            Arrays.asList("Sci-Fi", "Action", "Thriller"), "A mind-bending thriller");
+        EventResponse expectedResponse = new EventResponse("success", 0, 44L, 
+            new Event("movie-1-abc123", "movie", LocalDateTime.now(), movieEvent));
+        
+        when(eventProducer.sendMovieEvent(any(MovieEvent.class))).thenReturn(expectedResponse);
 
         // When & Then
-        mockMvc.perform(post("/api/events/movies")
+        mockMvc.perform(post("/api/events/movie")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(movie)))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Movie event sent successfully"));
-
-        verify(eventProducer).sendMovieEvent(any(Movie.class));
+                        .content(objectMapper.writeValueAsString(movieEvent)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("success"))
+                .andExpect(jsonPath("$.partition").value(0))
+                .andExpect(jsonPath("$.offset").value(44));
     }
 
     @Test
     void createUserEvent_WithInvalidJson_ShouldReturnBadRequest() throws Exception {
-        mockMvc.perform(post("/api/events/users")
+        mockMvc.perform(post("/api/events/user")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("invalid json"))
                 .andExpect(status().isBadRequest());
@@ -98,25 +106,40 @@ class EventControllerTest {
 
     @Test
     void createUserEvent_WithEmptyBody_ShouldReturnBadRequest() throws Exception {
-        mockMvc.perform(post("/api/events/users")
+        mockMvc.perform(post("/api/events/user")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(""))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void createPaymentEvent_WithNullAmount_ShouldStillWork() throws Exception {
+    void createUserEvent_WhenProducerThrowsException_ShouldReturnInternalServerError() throws Exception {
         // Given
-        Payment payment = new Payment("payment-001", "user-001", null, "USD");
-        doNothing().when(eventProducer).sendPaymentEvent(any(Payment.class));
+        UserEvent userEvent = new UserEvent(1, "john_doe", "john.doe@example.com", "registered", LocalDateTime.now());
+        when(eventProducer.sendUserEvent(any(UserEvent.class))).thenThrow(new RuntimeException("Kafka error"));
 
         // When & Then
-        mockMvc.perform(post("/api/events/payments")
+        mockMvc.perform(post("/api/events/user")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(payment)))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Payment event sent successfully"));
+                        .content(objectMapper.writeValueAsString(userEvent)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error").value("Internal Server Error"));
+    }
 
-        verify(eventProducer).sendPaymentEvent(any(Payment.class));
+    @Test
+    void createPaymentEvent_WithNullAmount_ShouldStillWork() throws Exception {
+        // Given
+        PaymentEvent paymentEvent = new PaymentEvent(1, 1, null, "completed", LocalDateTime.now(), "credit_card");
+        EventResponse expectedResponse = new EventResponse("success", 0, 45L, 
+            new Event("payment-1-abc123", "payment", LocalDateTime.now(), paymentEvent));
+        
+        when(eventProducer.sendPaymentEvent(any(PaymentEvent.class))).thenReturn(expectedResponse);
+
+        // When & Then
+        mockMvc.perform(post("/api/events/payment")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(paymentEvent)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("success"));
     }
 }

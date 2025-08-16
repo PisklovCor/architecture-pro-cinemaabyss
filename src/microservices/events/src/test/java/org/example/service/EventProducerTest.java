@@ -1,19 +1,22 @@
 package org.example.service;
 
-import org.example.model.Movie;
-import org.example.model.Payment;
-import org.example.model.User;
+import org.example.model.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class EventProducerTest {
@@ -25,62 +28,112 @@ class EventProducerTest {
     private EventProducer eventProducer;
 
     @Test
-    void sendUserEvent_ShouldSendToCorrectTopic() {
+    void sendUserEvent_ShouldReturnEventResponse() throws Exception {
         // Given
-        User user = new User("user-001", "John Doe", "john.doe@example.com");
+        UserEvent userEvent = new UserEvent(1, "john_doe", "john.doe@example.com", "registered", LocalDateTime.now());
+        
+        SendResult<String, Object> sendResult = createMockSendResult(0, 42L);
+        CompletableFuture<SendResult<String, Object>> future = CompletableFuture.completedFuture(sendResult);
+        
+        when(kafkaTemplate.send(eq("user-events"), eq("1"), any(Event.class))).thenReturn(future);
 
         // When
-        eventProducer.sendUserEvent(user);
+        EventResponse response = eventProducer.sendUserEvent(userEvent);
 
         // Then
-        verify(kafkaTemplate).send(eq("user-events"), eq("user-001"), eq(user));
+        assertThat(response.getStatus()).isEqualTo("success");
+        assertThat(response.getPartition()).isEqualTo(0);
+        assertThat(response.getOffset()).isEqualTo(42L);
+        assertThat(response.getEvent().getType()).isEqualTo("user");
+        assertThat(response.getEvent().getPayload()).isEqualTo(userEvent);
     }
 
     @Test
-    void sendPaymentEvent_ShouldSendToCorrectTopic() {
+    void sendPaymentEvent_ShouldReturnEventResponse() throws Exception {
         // Given
-        Payment payment = new Payment("payment-001", "user-001", new BigDecimal("99.99"), "USD");
+        PaymentEvent paymentEvent = new PaymentEvent(1, 1, 99.99f, "completed", LocalDateTime.now(), "credit_card");
+        
+        SendResult<String, Object> sendResult = createMockSendResult(0, 43L);
+        CompletableFuture<SendResult<String, Object>> future = CompletableFuture.completedFuture(sendResult);
+        
+        when(kafkaTemplate.send(eq("payment-events"), eq("1"), any(Event.class))).thenReturn(future);
 
         // When
-        eventProducer.sendPaymentEvent(payment);
+        EventResponse response = eventProducer.sendPaymentEvent(paymentEvent);
 
         // Then
-        verify(kafkaTemplate).send(eq("payment-events"), eq("payment-001"), eq(payment));
+        assertThat(response.getStatus()).isEqualTo("success");
+        assertThat(response.getPartition()).isEqualTo(0);
+        assertThat(response.getOffset()).isEqualTo(43L);
+        assertThat(response.getEvent().getType()).isEqualTo("payment");
+        assertThat(response.getEvent().getPayload()).isEqualTo(paymentEvent);
     }
 
     @Test
-    void sendMovieEvent_ShouldSendToCorrectTopic() {
+    void sendMovieEvent_ShouldReturnEventResponse() throws Exception {
         // Given
-        Movie movie = new Movie("movie-001", "The Matrix", "Sci-Fi", 1999);
+        MovieEvent movieEvent = new MovieEvent(1, "Inception", "viewed", 1, 8.8f, 
+            Arrays.asList("Sci-Fi", "Action", "Thriller"), "A mind-bending thriller");
+        
+        SendResult<String, Object> sendResult = createMockSendResult(0, 44L);
+        CompletableFuture<SendResult<String, Object>> future = CompletableFuture.completedFuture(sendResult);
+        
+        when(kafkaTemplate.send(eq("movie-events"), eq("1"), any(Event.class))).thenReturn(future);
 
         // When
-        eventProducer.sendMovieEvent(movie);
+        EventResponse response = eventProducer.sendMovieEvent(movieEvent);
 
         // Then
-        verify(kafkaTemplate).send(eq("movie-events"), eq("movie-001"), eq(movie));
+        assertThat(response.getStatus()).isEqualTo("success");
+        assertThat(response.getPartition()).isEqualTo(0);
+        assertThat(response.getOffset()).isEqualTo(44L);
+        assertThat(response.getEvent().getType()).isEqualTo("movie");
+        assertThat(response.getEvent().getPayload()).isEqualTo(movieEvent);
     }
 
     @Test
-    void sendUserEvent_WithNullId_ShouldStillSend() {
+    void sendUserEvent_WhenKafkaFails_ShouldThrowException() {
         // Given
-        User user = new User(null, "John Doe", "john.doe@example.com");
+        UserEvent userEvent = new UserEvent(1, "john_doe", "john.doe@example.com", "registered", LocalDateTime.now());
+        
+        CompletableFuture<SendResult<String, Object>> future = new CompletableFuture<>();
+        future.completeExceptionally(new RuntimeException("Kafka connection failed"));
+        
+        when(kafkaTemplate.send(eq("user-events"), eq("1"), any(Event.class))).thenReturn(future);
 
-        // When
-        eventProducer.sendUserEvent(user);
-
-        // Then
-        verify(kafkaTemplate).send(eq("user-events"), eq(null), eq(user));
+        // When & Then
+        assertThatThrownBy(() -> eventProducer.sendUserEvent(userEvent))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Failed to send user event");
     }
 
     @Test
-    void sendPaymentEvent_WithNullAmount_ShouldStillSend() {
+    void sendPaymentEvent_WithNullAmount_ShouldStillWork() throws Exception {
         // Given
-        Payment payment = new Payment("payment-001", "user-001", null, "USD");
+        PaymentEvent paymentEvent = new PaymentEvent(1, 1, null, "completed", LocalDateTime.now(), "credit_card");
+        
+        SendResult<String, Object> sendResult = createMockSendResult(0, 45L);
+        CompletableFuture<SendResult<String, Object>> future = CompletableFuture.completedFuture(sendResult);
+        
+        when(kafkaTemplate.send(eq("payment-events"), eq("1"), any(Event.class))).thenReturn(future);
 
         // When
-        eventProducer.sendPaymentEvent(payment);
+        EventResponse response = eventProducer.sendPaymentEvent(paymentEvent);
 
         // Then
-        verify(kafkaTemplate).send(eq("payment-events"), eq("payment-001"), eq(payment));
+        assertThat(response.getStatus()).isEqualTo("success");
+        assertThat(response.getEvent().getPayload()).isEqualTo(paymentEvent);
+    }
+
+    private SendResult<String, Object> createMockSendResult(int partition, long offset) {
+        SendResult<String, Object> sendResult = org.mockito.Mockito.mock(SendResult.class);
+        org.apache.kafka.clients.producer.RecordMetadata metadata = 
+            org.mockito.Mockito.mock(org.apache.kafka.clients.producer.RecordMetadata.class);
+        
+        when(sendResult.getRecordMetadata()).thenReturn(metadata);
+        when(metadata.partition()).thenReturn(partition);
+        when(metadata.offset()).thenReturn(offset);
+        
+        return sendResult;
     }
 }

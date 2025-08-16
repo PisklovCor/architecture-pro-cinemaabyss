@@ -1,13 +1,13 @@
 package org.example;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.example.model.Movie;
-import org.example.model.Payment;
-import org.example.model.User;
-import org.example.service.EventConsumer;
+import org.example.model.*;
+import java.util.Arrays;
+import java.time.LocalDateTime;
+
 import org.example.service.EventProducer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +24,7 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.math.BigDecimal;
+
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -41,8 +41,7 @@ class KafkaIntegrationTest {
     @Autowired
     private EventProducer eventProducer;
 
-    @Autowired
-    private EventConsumer eventConsumer;
+
 
     @Autowired
     private EmbeddedKafkaBroker embeddedKafkaBroker;
@@ -50,27 +49,27 @@ class KafkaIntegrationTest {
     @Test
     void userEventFlow_ShouldSendAndReceiveMessage() throws InterruptedException {
         // Given
-        User user = new User("user-001", "John Doe", "john.doe@example.com");
+        UserEvent userEvent = new UserEvent(1, "john_doe", "john.doe@example.com", "created", LocalDateTime.now());
 
         // Setup consumer to capture messages
-        BlockingQueue<ConsumerRecord<String, User>> records = new LinkedBlockingQueue<>();
+        BlockingQueue<ConsumerRecord<String, Event>> records = new LinkedBlockingQueue<>();
         ContainerProperties containerProperties = new ContainerProperties("user-events");
-        containerProperties.setMessageListener((MessageListener<String, User>) records::add);
+        containerProperties.setMessageListener((MessageListener<String, Event>) records::add);
 
-        KafkaMessageListenerContainer<String, User> container = createContainer(containerProperties, User.class);
+        KafkaMessageListenerContainer<String, Event> container = createContainer(containerProperties, Event.class);
         container.start();
         ContainerTestUtils.waitForAssignment(container, embeddedKafkaBroker.getPartitionsPerTopic());
 
         // When
-        eventProducer.sendUserEvent(user);
+        EventResponse response = eventProducer.sendUserEvent(userEvent);
 
         // Then
-        ConsumerRecord<String, User> received = records.poll(5, TimeUnit.SECONDS);
+        ConsumerRecord<String, Event> received = records.poll(5, TimeUnit.SECONDS);
         assertThat(received).isNotNull();
-        assertThat(received.key()).isEqualTo("user-001");
-        assertThat(received.value().getId()).isEqualTo("user-001");
-        assertThat(received.value().getName()).isEqualTo("John Doe");
-        assertThat(received.value().getEmail()).isEqualTo("john.doe@example.com");
+        assertThat(received.key()).isEqualTo("1");
+        assertThat(received.value().getType()).isEqualTo("user");
+        assertThat(received.value().getPayload()).isInstanceOf(java.util.LinkedHashMap.class);
+        assertThat(response.getStatus()).isEqualTo("success");
 
         container.stop();
     }
@@ -78,28 +77,27 @@ class KafkaIntegrationTest {
     @Test
     void paymentEventFlow_ShouldSendAndReceiveMessage() throws InterruptedException {
         // Given
-        Payment payment = new Payment("payment-001", "user-001", new BigDecimal("99.99"), "USD");
+        PaymentEvent paymentEvent = new PaymentEvent(1, 1, 99.99f, "completed", LocalDateTime.now(), "card");
 
         // Setup consumer to capture messages
-        BlockingQueue<ConsumerRecord<String, Payment>> records = new LinkedBlockingQueue<>();
+        BlockingQueue<ConsumerRecord<String, Event>> records = new LinkedBlockingQueue<>();
         ContainerProperties containerProperties = new ContainerProperties("payment-events");
-        containerProperties.setMessageListener((MessageListener<String, Payment>) records::add);
+        containerProperties.setMessageListener((MessageListener<String, Event>) records::add);
 
-        KafkaMessageListenerContainer<String, Payment> container = createContainer(containerProperties, Payment.class);
+        KafkaMessageListenerContainer<String, Event> container = createContainer(containerProperties, Event.class);
         container.start();
         ContainerTestUtils.waitForAssignment(container, embeddedKafkaBroker.getPartitionsPerTopic());
 
         // When
-        eventProducer.sendPaymentEvent(payment);
+        EventResponse response = eventProducer.sendPaymentEvent(paymentEvent);
 
         // Then
-        ConsumerRecord<String, Payment> received = records.poll(5, TimeUnit.SECONDS);
+        ConsumerRecord<String, Event> received = records.poll(5, TimeUnit.SECONDS);
         assertThat(received).isNotNull();
-        assertThat(received.key()).isEqualTo("payment-001");
-        assertThat(received.value().getId()).isEqualTo("payment-001");
-        assertThat(received.value().getUserId()).isEqualTo("user-001");
-        assertThat(received.value().getAmount()).isEqualTo(new BigDecimal("99.99"));
-        assertThat(received.value().getCurrency()).isEqualTo("USD");
+        assertThat(received.key()).isEqualTo("1");
+        assertThat(received.value().getType()).isEqualTo("payment");
+        assertThat(received.value().getPayload()).isInstanceOf(java.util.LinkedHashMap.class);
+        assertThat(response.getStatus()).isEqualTo("success");
 
         container.stop();
     }
@@ -107,28 +105,27 @@ class KafkaIntegrationTest {
     @Test
     void movieEventFlow_ShouldSendAndReceiveMessage() throws InterruptedException {
         // Given
-        Movie movie = new Movie("movie-001", "The Matrix", "Sci-Fi", 1999);
+        MovieEvent movieEvent = new MovieEvent(1, "The Matrix", "viewed", 1, 4.5f, Arrays.asList("Sci-Fi", "Action"), "Classic sci-fi movie");
 
         // Setup consumer to capture messages
-        BlockingQueue<ConsumerRecord<String, Movie>> records = new LinkedBlockingQueue<>();
+        BlockingQueue<ConsumerRecord<String, Event>> records = new LinkedBlockingQueue<>();
         ContainerProperties containerProperties = new ContainerProperties("movie-events");
-        containerProperties.setMessageListener((MessageListener<String, Movie>) records::add);
+        containerProperties.setMessageListener((MessageListener<String, Event>) records::add);
 
-        KafkaMessageListenerContainer<String, Movie> container = createContainer(containerProperties, Movie.class);
+        KafkaMessageListenerContainer<String, Event> container = createContainer(containerProperties, Event.class);
         container.start();
         ContainerTestUtils.waitForAssignment(container, embeddedKafkaBroker.getPartitionsPerTopic());
 
         // When
-        eventProducer.sendMovieEvent(movie);
+        EventResponse response = eventProducer.sendMovieEvent(movieEvent);
 
         // Then
-        ConsumerRecord<String, Movie> received = records.poll(5, TimeUnit.SECONDS);
+        ConsumerRecord<String, Event> received = records.poll(5, TimeUnit.SECONDS);
         assertThat(received).isNotNull();
-        assertThat(received.key()).isEqualTo("movie-001");
-        assertThat(received.value().getId()).isEqualTo("movie-001");
-        assertThat(received.value().getTitle()).isEqualTo("The Matrix");
-        assertThat(received.value().getGenre()).isEqualTo("Sci-Fi");
-        assertThat(received.value().getYear()).isEqualTo(1999);
+        assertThat(received.key()).isEqualTo("1");
+        assertThat(received.value().getType()).isEqualTo("movie");
+        assertThat(received.value().getPayload()).isInstanceOf(java.util.LinkedHashMap.class);
+        assertThat(response.getStatus()).isEqualTo("success");
 
         container.stop();
     }
@@ -142,7 +139,7 @@ class KafkaIntegrationTest {
         consumerProperties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         consumerProperties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         consumerProperties.put(JsonDeserializer.VALUE_DEFAULT_TYPE, valueType.getName());
-        consumerProperties.put(JsonDeserializer.TRUSTED_PACKAGES, "com.example.kafkaservice.model");
+        consumerProperties.put(JsonDeserializer.TRUSTED_PACKAGES, "org.example.model");
 
         DefaultKafkaConsumerFactory<String, T> consumerFactory =
                 new DefaultKafkaConsumerFactory<>(consumerProperties);

@@ -38,10 +38,16 @@ kafka-service/
 
 ## API Endpoints
 
-- `GET /api/events/health` - проверка здоровья сервиса
-- `POST /api/events/users` - создание события пользователя
-- `POST /api/events/payments` - создание события платежа
-- `POST /api/events/movies` - создание события фильма
+### Новые эндпоинты (согласно OpenAPI спецификации):
+- `GET /api/events/health` - проверка здоровья сервиса (возвращает JSON)
+- `POST /api/events/user` - создание события пользователя
+- `POST /api/events/payment` - создание события платежа  
+- `POST /api/events/movie` - создание события фильма
+
+### Устаревшие эндпоинты (для обратной совместимости):
+- `POST /api/events/users` - создание события пользователя (deprecated)
+- `POST /api/events/payments` - создание события платежа (deprecated)
+- `POST /api/events/movies` - создание события фильма (deprecated)
 
 ## Kafka Топики
 

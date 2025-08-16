@@ -1,10 +1,9 @@
 package org.example.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.example.model.Movie;
-import org.example.model.Payment;
-import org.example.model.User;
+import org.example.model.*;
 import org.example.service.EventProducer;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,26 +14,42 @@ public class EventController {
 
     private final EventProducer eventProducer;
 
-    @PostMapping("/users")
-    public ResponseEntity<String> createUserEvent(@RequestBody User user) {
-        eventProducer.sendUserEvent(user);
-        return ResponseEntity.ok("User event sent successfully");
+    @PostMapping("/user")
+    public ResponseEntity<?> createUserEvent(@RequestBody UserEvent userEvent) {
+        try {
+            EventResponse response = eventProducer.sendUserEvent(userEvent);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            ErrorResponse error = new ErrorResponse("Internal Server Error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
     }
 
-    @PostMapping("/payments")
-    public ResponseEntity<String> createPaymentEvent(@RequestBody Payment payment) {
-        eventProducer.sendPaymentEvent(payment);
-        return ResponseEntity.ok("Payment event sent successfully");
+    @PostMapping("/payment")
+    public ResponseEntity<?> createPaymentEvent(@RequestBody PaymentEvent paymentEvent) {
+        try {
+            EventResponse response = eventProducer.sendPaymentEvent(paymentEvent);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            ErrorResponse error = new ErrorResponse("Internal Server Error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
     }
 
-    @PostMapping("/movies")
-    public ResponseEntity<String> createMovieEvent(@RequestBody Movie movie) {
-        eventProducer.sendMovieEvent(movie);
-        return ResponseEntity.ok("Movie event sent successfully");
+    @PostMapping("/movie")
+    public ResponseEntity<?> createMovieEvent(@RequestBody MovieEvent movieEvent) {
+        try {
+            EventResponse response = eventProducer.sendMovieEvent(movieEvent);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            ErrorResponse error = new ErrorResponse("Internal Server Error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
     }
 
     @GetMapping("/health")
-    public ResponseEntity<String> health() {
-        return ResponseEntity.ok("Service is healthy");
+    public ResponseEntity<HealthResponse> health() {
+        HealthResponse healthResponse = new HealthResponse(true);
+        return ResponseEntity.ok(healthResponse);
     }
 }
