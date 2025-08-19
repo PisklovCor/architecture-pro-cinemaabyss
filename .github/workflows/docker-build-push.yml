@@ -99,15 +99,40 @@ jobs:
             type=ref,event=branch
             latest
 
-      # 2.2 Публикация прокси
+      # 3.2 Публикация прокси
       - name: Build and push Proxy Service Docker image
         uses: docker/build-push-action@v4
         with:
           context: ./src/microservices/proxy
           push: true
-          tags: ${{ steps.meta-movies.outputs.tags }}
-          labels: ${{ steps.meta-movies.outputs.labels }}
+          tags: ${{ steps.meta-proxy.outputs.tags }}
+          labels: ${{ steps.meta-proxy.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # 4.1 Сборка евент
+      - name: Extract metadata (tags, labels) for Event Service
+        id: meta-event
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.EVENTS_SERVICE_IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short
+            type=ref,event=branch
+            latest
+
+      # 4.2 Публикация евент
+      - name: Build and push Event Service Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./src/microservices/events
+          push: true
+          tags: ${{ steps.meta-event.outputs.tags }}
+          labels: ${{ steps.meta-event.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
 
       
