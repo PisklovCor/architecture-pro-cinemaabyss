@@ -24,6 +24,15 @@ minikube tunnel
 minikube dashboard
 ```
 
+### Установка/Проверка Helm-chart (Задание 4)
+```bash
+helm install cinemaabyss .\src\kubernetes\helm --namespace cinemaabyss --create-namespace
+helm uninstall cinemaabyss -n cinemaabyss
+helm list --namespace cinemaabyss
+kubectl get pods -n cinemaabyss
+```
+----
+
 ### Создание namespace
 ```bash
 kubectl apply -f src/kubernetes/namespace.yaml
