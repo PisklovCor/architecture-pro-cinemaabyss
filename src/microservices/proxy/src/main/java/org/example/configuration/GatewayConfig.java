@@ -28,7 +28,7 @@ public class GatewayConfig {
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
         RouteLocatorBuilder.Builder routes = builder.routes();
 
-        if (gradualMigration && moviesMigrationPercent > 0) {
+        if (gradualMigration && moviesMigrationPercent >= 0) {
             // Маршрут для процентной миграции movies
             routes.route("movies-service-migration", r -> r
                     .path("/api/movies")
