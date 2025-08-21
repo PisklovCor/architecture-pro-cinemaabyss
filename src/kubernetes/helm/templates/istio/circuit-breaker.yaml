@@ -1,0 +1,61 @@
+{{- if .Values.istio.enabled }}
+# Istio Circuit Breaker Configuration for CinemaAbyss
+# DestinationRule configures circuit breaker settings for services
+
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: monolith-circuit-breaker
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ include "cinemaabyss.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  host: monolith.{{ .Values.global.namespace }}.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: {{ .Values.istio.circuitBreaker.monolith.maxConnections }}
+      http:
+        http1MaxPendingRequests: {{ .Values.istio.circuitBreaker.monolith.http1MaxPendingRequests }}
+        http2MaxRequests: {{ .Values.istio.circuitBreaker.monolith.http2MaxRequests }}
+        maxRequestsPerConnection: {{ .Values.istio.circuitBreaker.monolith.maxRequestsPerConnection }}
+        maxRetries: {{ .Values.istio.circuitBreaker.monolith.maxRetries }}
+    outlierDetection:
+      consecutiveGatewayErrors: {{ .Values.istio.circuitBreaker.monolith.consecutiveGatewayErrors }}
+      consecutive5xxErrors: {{ .Values.istio.circuitBreaker.monolith.consecutive5xxErrors }}
+      interval: {{ .Values.istio.circuitBreaker.monolith.interval }}
+      baseEjectionTime: {{ .Values.istio.circuitBreaker.monolith.baseEjectionTime }}
+      maxEjectionPercent: {{ .Values.istio.circuitBreaker.monolith.maxEjectionPercent }}
+      minHealthPercent: {{ .Values.istio.circuitBreaker.monolith.minHealthPercent }}
+
+---
+
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: movies-service-circuit-breaker
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ include "cinemaabyss.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  host: movies-service.{{ .Values.global.namespace }}.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: {{ .Values.istio.circuitBreaker.moviesService.maxConnections }}
+      http:
+        http1MaxPendingRequests: {{ .Values.istio.circuitBreaker.moviesService.http1MaxPendingRequests }}
+        http2MaxRequests: {{ .Values.istio.circuitBreaker.moviesService.http2MaxRequests }}
+        maxRequestsPerConnection: {{ .Values.istio.circuitBreaker.moviesService.maxRequestsPerConnection }}
+        maxRetries: {{ .Values.istio.circuitBreaker.moviesService.maxRetries }}
+    outlierDetection:
+      consecutiveGatewayErrors: {{ .Values.istio.circuitBreaker.moviesService.consecutiveGatewayErrors }}
+      consecutive5xxErrors: {{ .Values.istio.circuitBreaker.moviesService.consecutive5xxErrors }}
+      interval: {{ .Values.istio.circuitBreaker.moviesService.interval }}
+      baseEjectionTime: {{ .Values.istio.circuitBreaker.moviesService.baseEjectionTime }}
+      maxEjectionPercent: {{ .Values.istio.circuitBreaker.moviesService.maxEjectionPercent }}
+      minHealthPercent: {{ .Values.istio.circuitBreaker.moviesService.minHealthPercent }}
+
+{{- end }}

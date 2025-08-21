@@ -161,7 +161,7 @@ zookeeper:
 
 # Ingress configuration
 ingress:
-  enabled: true
+  enabled: false
   className: nginx
   annotations:
     kubernetes.io/ingress.class: nginx
@@ -179,3 +179,45 @@ config:
   # Strangler Fig configuration
   gradualMigration: "true"
   moviesMigrationPercent: "100"
+
+# Istio configuration
+istio:
+  enabled: true
+  
+  # Circuit Breaker settings
+  circuitBreaker:
+    monolith:
+      maxConnections: 10
+      http1MaxPendingRequests: 5
+      http2MaxRequests: 10
+      maxRequestsPerConnection: 2
+      maxRetries: 3
+      consecutiveGatewayErrors: 3
+      consecutive5xxErrors: 3
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 30
+    
+    moviesService:
+      maxConnections: 10
+      http1MaxPendingRequests: 3
+      http2MaxRequests: 8
+      maxRequestsPerConnection: 2
+      maxRetries: 2
+      consecutiveGatewayErrors: 2
+      consecutive5xxErrors: 2
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 30
+  
+  # VirtualService settings
+  virtualService:
+    moviesTimeout: 10s
+    eventsTimeout: 10s
+    monolithTimeout: 15s
+    retryAttempts: 3
+    perTryTimeout: 3s
+    monolithRetryAttempts: 2
+    monolithPerTryTimeout: 5s

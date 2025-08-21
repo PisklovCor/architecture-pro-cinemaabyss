@@ -1,0 +1,22 @@
+{{- if .Values.istio.enabled }}
+# Gateway configuration for Istio ingress
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: cinemaabyss-gateway
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ include "cinemaabyss.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - {{ .Values.global.domain }}
+
+{{- end }}

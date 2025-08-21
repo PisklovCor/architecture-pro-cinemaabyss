@@ -14,12 +14,12 @@ minikube start
 minikube addons enable ingress
 ```
 
-### tunnel-отдельная консоль <--
+### tunnel-отдельная консоль <--лучше отдельное окно
 ```shell
 minikube tunnel
 ```
 
-### dashboard-отдельная консоль <--
+### dashboard-отдельная консоль <--лучше отдельное окно
 ```shell
 minikube dashboard
 ```
@@ -86,7 +86,7 @@ kubectl -n cinemaabyss get pod
 kubectl apply -f src/kubernetes/ingress.yaml
 ```
 
-### Удаление всего окружения после завершения работы
+### Удаление всего окружения после завершения работы (Задание 4)
 ```shell
 minikube delete --all
 ```
