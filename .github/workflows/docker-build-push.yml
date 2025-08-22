@@ -3,7 +3,7 @@ name: Docker Build and Push
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ cinema ]
     paths:
       - 'src/**'
       - '.github/workflows/docker-build-push.yml'
@@ -38,6 +38,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # 1.1 Сборка монолита
       - name: Extract metadata (tags, labels) for Monolith
         id: meta-monolith
         uses: docker/metadata-action@v4
@@ -50,6 +51,7 @@ jobs:
             type=ref,event=branch
             latest
 
+      # 1.2 Публикация монолита
       - name: Build and push Monolith Docker image
         uses: docker/build-push-action@v4
         with:
@@ -60,6 +62,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # 2.1 Сборка сервиса
       - name: Extract metadata (tags, labels) for Movies Service
         id: meta-movies
         uses: docker/metadata-action@v4
@@ -72,6 +75,7 @@ jobs:
             type=ref,event=branch
             latest
 
+      # 2.2 Публикация сервиса
       - name: Build and push Movies Service Docker image
         uses: docker/build-push-action@v4
         with:
@@ -81,5 +85,54 @@ jobs:
           labels: ${{ steps.meta-movies.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # 3.1 Сборка прокси
+      - name: Extract metadata (tags, labels) for Proxy Service
+        id: meta-proxy
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.PROXY_SERVICE_IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short
+            type=ref,event=branch
+            latest
+
+      # 3.2 Публикация прокси
+      - name: Build and push Proxy Service Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./src/microservices/proxy
+          push: true
+          tags: ${{ steps.meta-proxy.outputs.tags }}
+          labels: ${{ steps.meta-proxy.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # 4.1 Сборка евент
+      - name: Extract metadata (tags, labels) for Event Service
+        id: meta-event
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.EVENTS_SERVICE_IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short
+            type=ref,event=branch
+            latest
+
+      # 4.2 Публикация евент
+      - name: Build and push Event Service Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./src/microservices/events
+          push: true
+          tags: ${{ steps.meta-event.outputs.tags }}
+          labels: ${{ steps.meta-event.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
 
       

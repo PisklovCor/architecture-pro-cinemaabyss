@@ -22,6 +22,9 @@ spec:
     metadata:
       labels:
         app: monolith
+        version: v1
+      annotations:
+        sidecar.istio.io/inject: "true"
     spec:
       containers:
       - name: monolith

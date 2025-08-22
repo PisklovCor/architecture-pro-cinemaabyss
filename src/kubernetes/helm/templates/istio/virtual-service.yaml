@@ -1,0 +1,57 @@
+{{- if .Values.istio.enabled }}
+# VirtualService for managing traffic routing and timeouts
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: cinemaabyss-routes
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ include "cinemaabyss.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  hosts:
+  - {{ .Values.global.domain }}
+  gateways:
+  - cinemaabyss-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/api/movies"
+    route:
+    - destination:
+        host: movies-service.{{ .Values.global.namespace }}.svc.cluster.local
+        port:
+          number: {{ .Values.moviesService.service.port }}
+    timeout: {{ .Values.istio.virtualService.moviesTimeout }}
+    retries:
+      attempts: {{ .Values.istio.virtualService.retryAttempts }}
+      perTryTimeout: {{ .Values.istio.virtualService.perTryTimeout }}
+      retryOn: gateway-error,connect-failure,refused-stream
+  - match:
+    - uri:
+        prefix: "/api/events"
+    route:
+    - destination:
+        host: events-service.{{ .Values.global.namespace }}.svc.cluster.local
+        port:
+          number: {{ .Values.eventsService.service.port }}
+    timeout: {{ .Values.istio.virtualService.eventsTimeout }}
+    retries:
+      attempts: {{ .Values.istio.virtualService.retryAttempts }}
+      perTryTimeout: {{ .Values.istio.virtualService.perTryTimeout }}
+      retryOn: gateway-error,connect-failure,refused-stream
+  - match:
+    - uri:
+        prefix: "/"
+    route:
+    - destination:
+        host: monolith.{{ .Values.global.namespace }}.svc.cluster.local
+        port:
+          number: {{ .Values.monolith.service.port }}
+    timeout: {{ .Values.istio.virtualService.monolithTimeout }}
+    retries:
+      attempts: {{ .Values.istio.virtualService.monolithRetryAttempts }}
+      perTryTimeout: {{ .Values.istio.virtualService.monolithPerTryTimeout }}
+      retryOn: gateway-error,connect-failure,refused-stream
+
+{{- end }}
